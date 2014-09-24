@@ -22,18 +22,6 @@ describe('socket.xpub-xsub', function () {
 		xpub.bindSync('tcp://*:5555'); 		
         sub.connect('tcp://127.0.0.1:5555');
 		
-		sub.on('message', function (msg) {
-            msg.should.be.an.instanceof(Buffer);
-            switch (n++) {
-                case 0:
-                    msg.toString().should.equal('js is cool');
-                    break;
-                case 1:
-                    msg.toString().should.equal('luna is cool too');
-                    break;
-            }
-        });
-		
 		xsub.on('message', function (msg) {
             xpub.send(msg); // Forward message using the xpub so subscribers can receive it
         });
@@ -70,6 +58,18 @@ describe('socket.xpub-xsub', function () {
             }
             
             xsub.send(msg); // Forward message using the xsub so the publisher knows it has a subscriber 
+        });
+		
+		sub.on('message', function (msg) {
+            msg.should.be.an.instanceof(Buffer);
+            switch (n++) {
+                case 0:
+                    msg.toString().should.equal('js is cool');
+                    break;
+                case 1:
+                    msg.toString().should.equal('luna is cool too');
+                    break;
+            }
         });
 		
 		sub.subscribe('js');
