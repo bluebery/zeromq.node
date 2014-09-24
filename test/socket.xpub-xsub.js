@@ -3,7 +3,6 @@ var zmq = require('..')
   , semver = require('semver');
 
 describe('socket.xpub-xsub', function () {
-    var pub, sub, xpub, xsub;
     
     it('should support pub-sub tracing and filtering', function (done) {	
 		if (!semver.gte(zmq.version, '3.1.0')) {
@@ -13,30 +12,15 @@ describe('socket.xpub-xsub', function () {
 		
 		var n = 0;
 		var m = 0;
-		pub = zmq.socket('pub');
-        sub = zmq.socket('sub');
-		xpub = zmq.socket('xpub');
-		xsub = zmq.socket('xsub');
+		var pub = zmq.socket('pub');
+        var sub = zmq.socket('sub');
+		var xpub = zmq.socket('xpub');
+		var xsub = zmq.socket('xsub');
 
 		pub.bindSync('tcp://*:5556');	
 		xsub.connect('tcp://127.0.0.1:5556');
 		xpub.bindSync('tcp://*:5555'); 		
         sub.connect('tcp://127.0.0.1:5555');
-		
-        sub.on('message', function (msg) {
-            msg.should.be.an.instanceof(Buffer);
-            switch (n++) {
-                case 0:
-                    msg.toString().should.equal('js is cool');
-                    break;
-                case 1:
-                    msg.toString().should.equal('luna is cool too');
-                    break;
-            }
-        });
-        
-        sub.subscribe('js');
-        sub.subscribe('luna');
 		
 		xsub.on('message', function (msg) {
             xpub.send(msg); // Forward message using the xpub so subscribers can receive it
@@ -75,6 +59,21 @@ describe('socket.xpub-xsub', function () {
             
             xsub.send(msg); // Forward message using the xsub so the publisher knows it has a subscriber 
         });
+		
+		sub.on('message', function (msg) {
+            msg.should.be.an.instanceof(Buffer);
+            switch (n++) {
+                case 0:
+                    msg.toString().should.equal('js is cool');
+                    break;
+                case 1:
+                    msg.toString().should.equal('luna is cool too');
+                    break;
+            }
+        });
+		
+		sub.subscribe('js');
+        sub.subscribe('luna');
         
         setTimeout(function () {
             pub.send('js is cool');
