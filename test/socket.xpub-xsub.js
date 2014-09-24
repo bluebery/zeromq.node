@@ -5,18 +5,40 @@ var zmq = require('..')
 describe('socket.xpub-xsub', function () {
     var pub, sub, xpub, xsub;
     
-    it('should support pub-sub tracing and filtering', function (done) {
-
-		done();
-		return;
-	
+    it('should support pub-sub tracing and filtering', function (done) {	
+		if (!semver.gte(zmq.version, '3.1.0')) {
+			done();
+			return console.warn('Test requires libzmq >= 3.1.0');
+		}
 		
-    });
+		var n = 0;
+		var m = 0;
+		pub = zmq.socket('pub');
+        sub = zmq.socket('sub');
+		xpub = zmq.socket('xpub');
+		xsub = zmq.socket('xsub');
 
-    XSubXPubProxy = function (xsub, xpub, done) {
-        var n = 0;
-
-        xsub.on('message', function (msg) {
+		pub.bindSync('tcp://*:5556');	
+		xsub.connect('tcp://127.0.0.1:5556');
+		xpub.bindSync('tcp://*:5555'); 		
+        sub.connect('tcp://127.0.0.1:5555');
+		
+        sub.on('message', function (msg) {
+            msg.should.be.an.instanceof(Buffer);
+            switch (n++) {
+                case 0:
+                    msg.toString().should.equal('js is cool');
+                    break;
+                case 1:
+                    msg.toString().should.equal('luna is cool too');
+                    break;
+            }
+        });
+        
+        sub.subscribe('js');
+        sub.subscribe('luna');
+		
+		xsub.on('message', function (msg) {
             xpub.send(msg); // Forward message using the xpub so subscribers can receive it
         });
         
@@ -28,7 +50,7 @@ describe('socket.xpub-xsub', function () {
             
             switch (type) {
                 case 'subscribe':
-                    switch (n++) {
+                    switch (m++) {
                         case 0:
                             channel.should.equal('js');
                             break;
@@ -38,7 +60,7 @@ describe('socket.xpub-xsub', function () {
                     }
                     break;
                 case 'unsubscribe':
-                    switch (n++) {
+                    switch (m++) {
                         case 2:
                             channel.should.equal('luna');
                             sub.close();
@@ -53,5 +75,16 @@ describe('socket.xpub-xsub', function () {
             
             xsub.send(msg); // Forward message using the xsub so the publisher knows it has a subscriber 
         });
-    }
+        
+        setTimeout(function () {
+            pub.send('js is cool');
+            pub.send('ruby is meh');
+            pub.send('py is pretty cool');
+            pub.send('luna is cool too');
+        }, 100.0);
+        
+        setTimeout(function () {
+            sub.unsubscribe('luna');
+        }, 300);
+    });
 });
