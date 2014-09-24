@@ -34,9 +34,6 @@ describe('socket.xpub-xsub', function () {
             }
         });
 		
-		sub.subscribe('js');
-        sub.subscribe('luna');
-		
 		xsub.on('message', function (msg) {
             xpub.send(msg); // Forward message using the xpub so subscribers can receive it
         });
@@ -74,6 +71,9 @@ describe('socket.xpub-xsub', function () {
             
             xsub.send(msg); // Forward message using the xsub so the publisher knows it has a subscriber 
         });
+		
+		sub.subscribe('js');
+        sub.subscribe('luna');
         
         setTimeout(function () {
             pub.send('js is cool');
