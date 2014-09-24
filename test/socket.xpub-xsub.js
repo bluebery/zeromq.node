@@ -5,11 +5,6 @@ var zmq = require('..')
 describe('socket.xpub-xsub', function () {
     var pub, sub, xpub, xsub;
     
-    beforeEach(function () {
-        pub = zmq.socket('pub');
-        sub = zmq.socket('sub');
-    });
-    
     it('should support pub-sub tracing and filtering', function (done) {    	
 		if (!semver.gte(zmq.version, '3.1.0')) {
 			done();
@@ -17,6 +12,8 @@ describe('socket.xpub-xsub', function () {
 		}
 		
 		var n = 0;
+		pub = zmq.socket('pub');
+        sub = zmq.socket('sub');
 		xpub = zmq.socket('xpub');
 		xsub = zmq.socket('xsub');
 
@@ -24,7 +21,7 @@ describe('socket.xpub-xsub', function () {
 		xsub.connect('tcp://127.0.0.1:5556');
 		xpub.bindSync('tcp://*:5555'); 		
         sub.connect('tcp://127.0.0.1:5555');
-        
+		
         sub.on('message', function (msg) {
             msg.should.be.an.instanceof(Buffer);
             switch (n++) {
